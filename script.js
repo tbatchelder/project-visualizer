@@ -97,9 +97,11 @@ Util.ProjectVisualizer = (() => {
 	};
 
 	// -----------------------------
-	// State
+	// State & cached DOM
 	// -----------------------------
 	let currentProjectName = null;
+	let currentFilesByPath = null; // path -> file map for O(1) lookup
+	const $ = (id) => document.getElementById(id);
 
 	// -----------------------------
 	// Build folder tree from files
@@ -195,47 +197,17 @@ Util.ProjectVisualizer = (() => {
 	function loadProject(name) {
 		currentProjectName = name;
 		const data = PROJECT_DATA[name];
+		currentFilesByPath = new Map(data.files.map((f) => [f.path, f]));
 		const tree = buildTree(data.files);
 
-		document.getElementById('accordion').innerHTML = renderNode(name, tree);
-
-		// Folder toggles
-		document.querySelectorAll('.folder > span').forEach(span => {
-			span.addEventListener('click', e => {
-				e.stopPropagation();
-				span.parentElement.classList.toggle('open');
-			});
-		});
-
-		// File clicks
-		document.querySelectorAll('.file').forEach(fileEl => {
-			fileEl.addEventListener('click', e => {
-				e.stopPropagation();
-				const path = fileEl.dataset.file;
-				showFileDetails(path);
-			});
-		});
-
-		// Export item clicks
-		document.querySelectorAll('.export-item').forEach(expEl => {
-			expEl.addEventListener('click', e => {
-				e.stopPropagation();
-				const id = expEl.dataset.export; // filePath::kind::name
-				showExportDetails(id);
-			});
-		});
-
-		document.getElementById('details-content').textContent =
-			`Loaded project: ${name} (${data.level})`;
+		const accordion = $('accordion');
+		accordion.innerHTML = renderNode(name, tree);
+		$('details-content').textContent = `Loaded project: ${name} (${data.level})`;
 	}
 
-	// -----------------------------
-	// Find file by path in current project
-	// -----------------------------
+	// Find file by path (O(1) via map built on load)
 	function findFileInCurrentProject(path) {
-		if (!currentProjectName) return null;
-		const project = PROJECT_DATA[currentProjectName];
-		return project.files.find(f => f.path === path) || null;
+		return currentFilesByPath ? currentFilesByPath.get(path) ?? null : null;
 	}
 
 	// -----------------------------
@@ -292,7 +264,7 @@ ${
 Unused File: ${file.unused ? 'YES' : 'NO'}
     `;
 
-		document.getElementById('details-content').textContent = text;
+		$('details-content').textContent = text;
 	}
 
 	// -----------------------------
@@ -339,16 +311,41 @@ File: ${file.path}
 Used: ${item.used ? 'YES' : 'NO'}
     `;
 
-		document.getElementById('details-content').textContent = text;
+		$('details-content').textContent = text;
+	}
+
+	// -----------------------------
+	// Accordion: single delegated click (folder toggle, file, export)
+	// -----------------------------
+	function setupAccordionDelegation() {
+		$('accordion').addEventListener('click', (e) => {
+			const fileEl = e.target.closest('.file[data-file]');
+			if (fileEl) {
+				e.stopPropagation();
+				showFileDetails(fileEl.dataset.file);
+				return;
+			}
+			const exportEl = e.target.closest('.export-item[data-export]');
+			if (exportEl) {
+				e.stopPropagation();
+				showExportDetails(exportEl.dataset.export);
+				return;
+			}
+			const folderSpan = e.target.closest('.folder > span');
+			if (folderSpan) {
+				e.stopPropagation();
+				folderSpan.parentElement.classList.toggle('open');
+			}
+		});
 	}
 
 	// -----------------------------
 	// Modal logic
 	// -----------------------------
 	function setupModal() {
-		const modal = document.getElementById('modal');
-		const btn = document.getElementById('instructionsBtn');
-		const close = document.getElementById('closeModal');
+		const modal = $('modal');
+		const btn = $('instructionsBtn');
+		const close = $('closeModal');
 
 		btn.onclick = () => (modal.style.display = 'block');
 		close.onclick = () => (modal.style.display = 'none');
@@ -361,7 +358,7 @@ Used: ${item.used ? 'YES' : 'NO'}
 	// Dropdown logic
 	// -----------------------------
 	function setupDropdown() {
-		const select = document.getElementById('projectSelect');
+		const select = $('projectSelect');
 
 		select.innerHTML =
 			`<option value="">Select a project</option>` +
@@ -378,6 +375,7 @@ Used: ${item.used ? 'YES' : 'NO'}
 	function init() {
 		setupDropdown();
 		setupModal();
+		setupAccordionDelegation();
 	}
 
 	return {
