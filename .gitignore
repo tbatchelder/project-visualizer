@@ -1,0 +1,39 @@
+# --- Dependencies ---
+node_modules/
+jspm_packages/
+package-lock.json
+yarn.lock
+
+# --- Environment/Secrets ---
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.pem
+*.key
+
+# --- Build Outputs ---
+dist/
+build/
+out/
+*.log
+
+# --- OS / IDE Specific ---
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+
+# --- Documentation & Binaries ---
+# Ignores all Microsoft Word files
+*.doc
+*.docx
+
+# Ignores everything inside a folder named "notes"
+notes/
+
+# If you want to keep the folder structure but ignore the files inside "notes":
+# notes/*
+# !notes/.gitkeep

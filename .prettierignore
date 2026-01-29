@@ -1,0 +1,53 @@
+# Dependencies
+node_modules
+.pnp
+.pnp.js
+
+# Build outputs
+.next
+out
+build
+dist
+*.tsbuildinfo
+
+# Generated files
+prisma/generated
+next-env.d.ts
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment files
+.env
+.env*.local
+
+# Testing
+coverage
+.nyc_output
+cypress/videos
+cypress/screenshots
+test-results
+playwright-report
+playwright/.cache
+
+# Database migrations (SQL files)
+prisma/migrations/**/*.sql
+
+# Lock files (optional - some teams prefer to format these)
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# IDE
+.vscode
+.idea
+
+# Vercel
+.vercel
+
+# Other
+.eslintcache
+.DS_Store

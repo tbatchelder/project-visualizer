@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Project Visualizer</title>
+		<link rel="stylesheet" href="styles.css" />
+	</head>
+
+	<body>
+		<header>
+			<img src="images/beam-logo.svg" class="logo" alt="Logo" />
+			<h1>Project Visualizer</h1>
+
+			<select id="projectSelect"></select>
+
+			<button id="instructionsBtn">Instructions</button>
+		</header>
+
+		<div id="app">
+			<div id="accordion"></div>
+
+			<div id="details">
+				<h3>File Details</h3>
+				<pre id="details-content">Select a project to begin.</pre>
+			</div>
+		</div>
+
+		<!-- Modal -->
+		<div id="modal" class="modal">
+			<div class="modal-content">
+				<span id="closeModal" class="close">&times;</span>
+				<h2>Instructions</h2>
+				<div class="modal-body">
+					<p>1. Run the Node scanner to generate project JSON files.</p>
+					<p>2. Place all JSON files into the /data folder.</p>
+					<p>3. Ensure projects.json lists all available projects.</p>
+					<p>4. Select a project from the dropdown to load it.</p>
+					<p>5. Click folders to expand; click files to view details.</p>
+				</div>
+			</div>
+		</div>
+
+		<script src="script.js"></script>
+	</body>
+</html>
