@@ -31,8 +31,9 @@ Thumbs.db
 *.doc
 *.docx
 
-# Ignores everything inside a folder named "notes"
+# Ignores all private data
 notes/
+data/
 
 # If you want to keep the folder structure but ignore the files inside "notes":
 # notes/*
