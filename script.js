@@ -2,106 +2,24 @@
 window.Util = window.Util || {};
 Util.ProjectVisualizer = (() => {
 	// -----------------------------
-	// Mock project list (with level)
+	// JSON Loaders
 	// -----------------------------
-	const PROJECT_LIST = [
-		{ name: 'alphaProject', file: 'alphaProject.json', level: 'L2' },
-		{ name: 'betaProject', file: 'betaProject.json', level: 'L1' },
-		{ name: 'gammaProject', file: 'gammaProject.json', level: 'L2' },
-	];
-
-	// -----------------------------
-	// Mock project data (Layer 2)
-	// -----------------------------
-	const PROJECT_DATA = {
-		alphaProject: {
-			projectName: 'alphaProject',
-			level: 'L2',
-			files: [
-				{
-					path: 'src/index.js',
-					imports: ['src/utils.js'],
-					exports: ['main'],
-					unused: false,
-
-					exportedFunctions: [{ name: 'main', used: true }],
-					exportedConstants: [],
-					exportedClasses: [],
-					exportedTypes: [],
-					exportedInterfaces: [],
-				},
-				{
-					path: 'src/utils.js',
-					imports: [],
-					exports: ['helper', 'UNUSED_CONST'],
-					unused: false,
-
-					exportedFunctions: [{ name: 'helper', used: true }],
-					exportedConstants: [{ name: 'UNUSED_CONST', used: false }],
-					exportedClasses: [],
-					exportedTypes: [],
-					exportedInterfaces: [],
-				},
-			],
-		},
-
-		betaProject: {
-			projectName: 'betaProject',
-			level: 'L1',
-			files: [
-				{
-					path: 'app/start.js',
-					imports: [],
-					exports: ['startApp'],
-					unused: false,
-
-					exportedFunctions: [{ name: 'startApp', used: true }],
-					exportedConstants: [],
-					exportedClasses: [],
-					exportedTypes: [],
-					exportedInterfaces: [],
-				},
-				{
-					path: 'app/old.js',
-					imports: [],
-					exports: ['legacy'],
-					unused: true,
-
-					exportedFunctions: [{ name: 'legacy', used: false }],
-					exportedConstants: [],
-					exportedClasses: [],
-					exportedTypes: [],
-					exportedInterfaces: [],
-				},
-			],
-		},
-
-		gammaProject: {
-			projectName: 'gammaProject',
-			level: 'L2',
-			files: [
-				{
-					path: 'main.js',
-					imports: [],
-					exports: ['run', 'UNUSED_TYPE'],
-					unused: false,
-
-					exportedFunctions: [{ name: 'run', used: true }],
-					exportedConstants: [],
-					exportedClasses: [],
-					exportedTypes: [{ name: 'UNUSED_TYPE', used: false }],
-					exportedInterfaces: [],
-				},
-			],
-		},
-	};
+	async function loadProjectIndex() {
+		try {
+			const res = await fetch('data/projects.json');
+			if (!res.ok) return null; // file missing
+			return await res.json();
+		} catch {
+			return null; // network or parse error
+		}
+	}
 
 	// -----------------------------
 	// State & cached DOM
 	// -----------------------------
 	let currentProjectName = null;
 	let currentFilesByPath = null; // path -> file map for O(1) lookup
-	const $ = (id) => document.getElementById(id);
+	const $ = id => document.getElementById(id);
 
 	// -----------------------------
 	// Build folder tree from files
@@ -194,20 +112,17 @@ Util.ProjectVisualizer = (() => {
 	// -----------------------------
 	// Load a project
 	// -----------------------------
-	function loadProject(name) {
-		currentProjectName = name;
-		const data = PROJECT_DATA[name];
-		currentFilesByPath = new Map(data.files.map((f) => [f.path, f]));
+	function loadProject(data) {
+		console.log(data);
+		currentProjectName = data.projectName;
+
+		currentFilesByPath = new Map(data.files.map(f => [f.path, f]));
 		const tree = buildTree(data.files);
 
 		const accordion = $('accordion');
-		accordion.innerHTML = renderNode(name, tree);
-		$('details-content').textContent = `Loaded project: ${name} (${data.level})`;
-	}
+		accordion.innerHTML = renderNode(data.projectName, tree);
 
-	// Find file by path (O(1) via map built on load)
-	function findFileInCurrentProject(path) {
-		return currentFilesByPath ? currentFilesByPath.get(path) ?? null : null;
+		$('details-content').textContent = `Loaded project: ${data.projectName} (${data.level})`;
 	}
 
 	// -----------------------------
@@ -218,51 +133,53 @@ Util.ProjectVisualizer = (() => {
 		if (!file) return;
 
 		const text = `
-Path: ${file.path}
+      Path: ${file.path}
 
-Imports:
-${file.imports.length ? file.imports.join('\n') : '(none)'}
+      Imports:
+      ${file.imports.length ? file.imports.join('\n') : '(none)'}
 
-Exports:
-${file.exports.length ? file.exports.join('\n') : '(none)'}
+      Exports:
+      ${file.exports.length ? file.exports.map(e => e.name) : '(none)'}
 
-Exported Functions:
-${
-	file.exportedFunctions && file.exportedFunctions.length
-		? file.exportedFunctions.map(f => `${f.name} (used: ${f.used ? 'YES' : 'NO'})`).join('\n')
-		: '(none)'
-}
+      Exported Functions:
+      ${
+				file.exportedFunctions && file.exportedFunctions.length
+					? file.exportedFunctions.map(f => `${f.name} (used: ${f.used ? 'YES' : 'NO'})`).join('\n')
+					: '(none)'
+			}
 
-Exported Constants:
-${
-	file.exportedConstants && file.exportedConstants.length
-		? file.exportedConstants.map(c => `${c.name} (used: ${c.used ? 'YES' : 'NO'})`).join('\n')
-		: '(none)'
-}
+      Exported Constants:
+      ${
+				file.exportedConstants && file.exportedConstants.length
+					? file.exportedConstants.map(c => `${c.name} (used: ${c.used ? 'YES' : 'NO'})`).join('\n')
+					: '(none)'
+			}
 
-Exported Classes:
-${
-	file.exportedClasses && file.exportedClasses.length
-		? file.exportedClasses.map(c => `${c.name} (used: ${c.used ? 'YES' : 'NO'})`).join('\n')
-		: '(none)'
-}
+      Exported Classes:
+      ${
+				file.exportedClasses && file.exportedClasses.length
+					? file.exportedClasses.map(c => `${c.name} (used: ${c.used ? 'YES' : 'NO'})`).join('\n')
+					: '(none)'
+			}
 
-Exported Types:
-${
-	file.exportedTypes && file.exportedTypes.length
-		? file.exportedTypes.map(t => `${t.name} (used: ${t.used ? 'YES' : 'NO'})`).join('\n')
-		: '(none)'
-}
+      Exported Types:
+      ${
+				file.exportedTypes && file.exportedTypes.length
+					? file.exportedTypes.map(t => `${t.name} (used: ${t.used ? 'YES' : 'NO'})`).join('\n')
+					: '(none)'
+			}
 
-Exported Interfaces:
-${
-	file.exportedInterfaces && file.exportedInterfaces.length
-		? file.exportedInterfaces.map(i => `${i.name} (used: ${i.used ? 'YES' : 'NO'})`).join('\n')
-		: '(none)'
-}
+      Exported Interfaces:
+      ${
+				file.exportedInterfaces && file.exportedInterfaces.length
+					? file.exportedInterfaces
+							.map(i => `${i.name} (used: ${i.used ? 'YES' : 'NO'})`)
+							.join('\n')
+					: '(none)'
+			}
 
-Unused File: ${file.unused ? 'YES' : 'NO'}
-    `;
+      Unused File: ${file.unused ? 'YES' : 'NO'}
+          `;
 
 		$('details-content').textContent = text;
 	}
@@ -270,6 +187,10 @@ Unused File: ${file.unused ? 'YES' : 'NO'}
 	// -----------------------------
 	// Show export details (function/constant/class/type/interface)
 	// -----------------------------
+	function findFileInCurrentProject(path) {
+		return currentFilesByPath ? (currentFilesByPath.get(path) ?? null) : null;
+	}
+
 	function showExportDetails(id) {
 		// id format: filePath::kind::name
 		const [path, kind, name] = id.split('::');
@@ -318,7 +239,7 @@ Used: ${item.used ? 'YES' : 'NO'}
 	// Accordion: single delegated click (folder toggle, file, export)
 	// -----------------------------
 	function setupAccordionDelegation() {
-		$('accordion').addEventListener('click', (e) => {
+		$('accordion').addEventListener('click', e => {
 			const fileEl = e.target.closest('.file[data-file]');
 			if (fileEl) {
 				e.stopPropagation();
@@ -357,15 +278,40 @@ Used: ${item.used ? 'YES' : 'NO'}
 	// -----------------------------
 	// Dropdown logic
 	// -----------------------------
-	function setupDropdown() {
+	async function setupDropdown() {
 		const select = $('projectSelect');
+		const index = await loadProjectIndex();
+
+		if (!index || index.length === 0) {
+			select.innerHTML = `<option value="">Scan a project first</option>`;
+			return;
+		}
 
 		select.innerHTML =
 			`<option value="">Select a project</option>` +
-			PROJECT_LIST.map(p => `<option value="${p.name}">${p.name} (${p.level})</option>`).join('');
+			index
+				.map(
+					p =>
+						`<option value="${p.path}" data-version="${p.latestVersion}">
+                  ${p.name} (${p.level})
+              </option>`,
+				)
+				.join('');
+	}
 
-		select.addEventListener('change', () => {
-			if (select.value) loadProject(select.value);
+	function setupProjectSelection() {
+		$('projectSelect').addEventListener('change', async e => {
+			const option = e.target.selectedOptions[0];
+			if (!option || !option.value) return;
+
+			const folder = option.value; // e.g. "L2/myProject"
+			const version = option.dataset.version.padStart(4, '0');
+			const filePath = `data/${folder}/${version}.json`;
+
+			const res = await fetch(filePath);
+			const data = await res.json();
+
+			loadProject(data);
 		});
 	}
 
@@ -374,13 +320,14 @@ Used: ${item.used ? 'YES' : 'NO'}
 	// -----------------------------
 	function init() {
 		setupDropdown();
+		setupProjectSelection();
 		setupModal();
 		setupAccordionDelegation();
 	}
 
 	return {
 		init,
-		loadProject,
+		// loadProject,
 	};
 })();
 

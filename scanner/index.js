@@ -44,7 +44,7 @@ const parsedFiles = allFiles.map(filePath => {
 	const { imports, exports } = parseFile(filePath);
 
 	return {
-		path: path.relative(absFolder, filePath),
+		path: path.relative(absFolder, filePath).replace(/\\/g, '/'),
 		imports,
 		exports,
 		unused: false, // computed later
